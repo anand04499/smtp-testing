@@ -203,7 +203,10 @@ export class SMTPService {
   }
 
   async generatePdfBuffer(htmlContent: string): Promise<Buffer> {
-    const browser =  await puppeteer.launch({ args: ['--disable-dev-shm-usage'], });
+    const browser = await puppeteer.launch({
+      executablePath: '/usr/bin/google-chrome',
+      args: ['--disable-dev-shm-usage']
+    });
     const page = await browser.newPage();
 
     await page.setContent(htmlContent);
