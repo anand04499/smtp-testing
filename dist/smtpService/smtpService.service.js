@@ -62,12 +62,20 @@ let SMTPService = class SMTPService {
     async sendPdfMail(email, apiData, name, fromDate, toDate) {
         try {
             console.log('API Data:', apiData);
-            const htmlContentWithHello = `<p>Hello,SMTP Service is working fine ${toDate}</p>`;
+            const htmlContent = await this.generateHtmlContent(apiData, columns, fromDate, toDate, name);
+            const pdfBuffer = await this.generatePdfBuffer(htmlContent);
             await this.mailerService.sendMail({
                 to: email,
                 from: 'electricmeteremdee@gmail.com',
-                subject: 'Testing the SMTP service',
-                html: htmlContentWithHello,
+                subject: 'Pdf',
+                attachments: [
+                    {
+                        filename: `${name}.pdf`,
+                        content: pdfBuffer.toString('base64'),
+                        encoding: 'base64',
+                        contentDisposition: 'attachment',
+                    },
+                ],
             });
             return 'Email is Sent Successfully';
         }
@@ -170,6 +178,7 @@ let SMTPService = class SMTPService {
     async generatePdfBuffer(htmlContent) {
         const browser = await puppeteer.launch({
             executablePath: '/usr/bin/google-chrome',
+            args: ['--disable-dev-shm-usage']
         });
         const page = await browser.newPage();
         await page.setContent(htmlContent);
