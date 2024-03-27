@@ -49,20 +49,49 @@ const columns = [
 export class SMTPService {
   constructor(private readonly mailerService: MailerService) {}
 
+  // async sendPdfMail(email: string, apiData: any, name: string,fromDate:any,toDate:any): Promise<string> {
+  //   try {
+  //     console.log('API Data:', apiData);
+
+  //     // const htmlContent = await this.generateHtmlContent(apiData, columns,fromDate,toDate,name);
+  //     // const pdfBuffer = await this.generatePdfBuffer(htmlContent);
+  //     const htmlContentWithHello = `<p>Hello,SMTP Service is working fine ${toDate}</p>`;
+
+
+  //     await this.mailerService.sendMail({
+  //       to: email,
+  //       from: 'electricmeteremdee@gmail.com',
+  //       subject: 'Testing the SMTP service',
+  //       html: htmlContentWithHello,
+  //     });
+
+  //     return 'Email is Sent Successfully';
+  //   } catch (error) {
+  //     console.error('Error sending email:', error);
+  //     return 'Error sending email';
+  //   }
+  // }
+
+
   async sendPdfMail(email: string, apiData: any, name: string,fromDate:any,toDate:any): Promise<string> {
     try {
       console.log('API Data:', apiData);
 
-      // const htmlContent = await this.generateHtmlContent(apiData, columns,fromDate,toDate,name);
-      // const pdfBuffer = await this.generatePdfBuffer(htmlContent);
-      const htmlContentWithHello = `<p>Hello,SMTP Service is working fine ${toDate}</p>`;
-
+      const htmlContent = await this.generateHtmlContent(apiData, columns,fromDate,toDate,name);
+      const pdfBuffer = await this.generatePdfBuffer(htmlContent);
 
       await this.mailerService.sendMail({
         to: email,
         from: 'electricmeteremdee@gmail.com',
-        subject: 'Testing the SMTP service',
-        html: htmlContentWithHello,
+        subject: 'Pdf',
+        attachments: [
+          {
+            filename: `${name}.pdf`,
+            content: pdfBuffer.toString('base64'),
+            encoding: 'base64',
+            contentDisposition: 'attachment',
+          },
+        ],
       });
 
       return 'Email is Sent Successfully';
@@ -174,9 +203,7 @@ export class SMTPService {
   }
 
   async generatePdfBuffer(htmlContent: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      executablePath: '/usr/bin/google-chrome',
-    });
+    const browser =  await puppeteer.launch({ args: ['--disable-dev-shm-usage'], });
     const page = await browser.newPage();
 
     await page.setContent(htmlContent);
