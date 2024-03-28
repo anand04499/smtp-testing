@@ -9,7 +9,7 @@ import { MailerModule } from "@nestjs-modules/mailer";
             transport:{
                 service:"gmail",
                 host: 'smtp.gmail.com',
-                port: 465,  // Change port to 587 for STARTTLS
+                port: 465, 
                 secure: true,  // Set to false for STARTTLS
                 logger: true,
                 debug:true,
