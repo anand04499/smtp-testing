@@ -1,6 +1,10 @@
-import * as puppeteer from 'puppeteer-core';
+// import PDFDocument from 'pdfkit'
+// import * as puppeteer from 'puppeteer-core';
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+// import fs from 'fs';
+import { PDFDocument, rgb,PageSizes } from 'pdf-lib';
+
 
 
 const columns = [
@@ -73,12 +77,155 @@ export class SMTPService {
   // }
 
 
-  async sendPdfMail(email: string, apiData: any, name: string,fromDate:any,toDate:any): Promise<string> {
-    try {
-      console.log('API Data:', apiData);
+  // async sendPdfMail(email: string, apiData: any, name: string,fromDate:any,toDate:any): Promise<string> {
+  //   try {
+  //     console.log('API Data:', apiData);
 
-      const htmlContent = await this.generateHtmlContent(apiData, columns,fromDate,toDate,name);
-      const pdfBuffer = await this.generatePdfBuffer(htmlContent);
+  //     const htmlContent = await this.generateHtmlContent(apiData, columns,fromDate,toDate,name);
+  //     const pdfBuffer = await this.generatePdfBuffer(htmlContent);
+
+  //     await this.mailerService.sendMail({
+  //       to: email,
+  //       from: 'electricmeteremdee@gmail.com',
+  //       subject: 'Pdf',
+  //       attachments: [
+  //         {
+  //           filename: `${name}.pdf`,
+  //           content: pdfBuffer.toString('base64'),
+  //           encoding: 'base64',
+  //           contentDisposition: 'attachment',
+  //         },
+  //       ],
+  //     });
+
+  //     return 'Email is Sent Successfully';
+  //   } catch (error) {
+  //     console.error('Error sending email:', error);
+  //     return 'Error sending email';
+  //   }
+  // }
+
+  // async generateHtmlContent(apiData: any, columns: any,fromDate:any,toDate:any,name:string): Promise<string> {
+   
+  //   const apiDataIndices = [...new Set(apiData.map(item => Object.keys(item)).flat())];
+   
+  //   const headers = apiDataIndices
+  // .filter(apiKey => columns.some(column => column.dataIndex === apiKey))
+  // .map(apiKey => {
+  //   const matchingColumn = columns.find(column => column.dataIndex === apiKey);
+  //   return `<th>${matchingColumn?.title || ''}</th>`;
+  // })
+  // .join('');
+  //   // const rows = apiData.map(item =>
+  //   //   columns.map(column => `<td>${item[column.dataIndex]?.toString() || ''}</td>`).join('')
+  //   // );
+
+  //   const rows = apiData.map(item => {
+  //       const rowData = apiDataIndices
+  //         .filter(apiKey => columns.some(column => column.dataIndex === apiKey))
+  //         .map(apiKey => {
+  //           const matchingColumn = columns.find(column => column.dataIndex === apiKey);
+  //           return `<td>${item[matchingColumn?.dataIndex]?.toString() || ''}</td>`;
+  //         })
+  //         .join('');
+  //       return `<tr>${rowData}</tr>`;
+  //     });
+
+
+  //   const htmlContent = `
+  //     <html>
+  //       <head>
+  //         <style>
+  //           table {
+  //             border-collapse: collapse;
+  //             width: 100%;
+  //           }
+
+  //           th, td {
+  //             border: 1px solid black;
+  //             padding: 5px;
+  //             text-align: left;
+  //           }
+
+  //           h2{
+  //               text-align:center;
+  //           }
+  //           footer {
+  //               position: fixed;
+  //               bottom: 0;
+  //               left: 0;
+  //               width: 100%;
+  //               text-align: center;
+  //               padding: 5px;
+  //             }
+        
+
+  //             @page {
+  //               counter-increment: page;
+  //               @bottom-center {
+  //                 content: 'Page ' counter(page);
+  //               }
+  //             }
+  //         </style>
+  //       </head>
+  //       <body>
+  //         <table>
+  //           <h2>${name}</h2>
+  //           <div>
+  //             <h4>From Date : ${fromDate}</p>
+  //             <h4>To Date   : ${toDate}</p>
+  //           </div>
+  //           <thead>
+  //             <tr>${headers}</tr>
+  //           </thead>
+  //           <tbody>
+  //             ${rows.map(row => `<tr>${row}</tr>`).join('')}
+  //           </tbody>
+  //         </table>
+  //         <footer id="pageFooter"></footer>
+
+  //         <script type="text/javascript">
+  //           // JavaScript to dynamically update the page number
+  //           let pageNumber = 1;
+    
+  //           window.matchMedia('print').addListener(function (mediaQueryListEvent) {
+  //             if (mediaQueryListEvent.matches) {
+  //               updatePageNumber();
+  //             }
+  //           });
+    
+  //           function updatePageNumber() {
+  //             document.getElementById('pageFooter').innerHTML = 'Page ' + pageNumber;
+  //             pageNumber++;
+  //           }
+  //         </script>        
+  //       </body>
+  //     </html>
+  //   `;
+
+  //   return htmlContent;
+  // }
+
+  // async generatePdfBuffer(htmlContent: string): Promise<Buffer> {
+  //   const browser = await puppeteer.launch({
+  //     executablePath: '/usr/bin/google-chrome',
+  //     args: ['--disable-dev-shm-usage']
+  //   });
+  //   const page = await browser.newPage();
+
+  //   await page.setContent(htmlContent);
+    
+  //   const pdfBuffer = await page.pdf({ format: 'letter' }); // Adjust format as needed
+
+  //   await browser.close();
+
+  //   return pdfBuffer;
+  // }
+
+
+  async sendPdfMail(email: string, apiData: any, name: string, fromDate: any, toDate: any): Promise<string> {
+    try {
+      const pdfBuffer = await this.generatePdfBuffer(apiData, name, fromDate, toDate);
 
       await this.mailerService.sendMail({
         to: email,
@@ -87,8 +234,8 @@ export class SMTPService {
         attachments: [
           {
             filename: `${name}.pdf`,
-            content: pdfBuffer.toString('base64'),
-            encoding: 'base64',
+            content: pdfBuffer,
+            encoding: 'binary',
             contentDisposition: 'attachment',
           },
         ],
@@ -101,120 +248,34 @@ export class SMTPService {
     }
   }
 
-  async generateHtmlContent(apiData: any, columns: any,fromDate:any,toDate:any,name:string): Promise<string> {
-   
-    const apiDataIndices = [...new Set(apiData.map(item => Object.keys(item)).flat())];
-   
-    const headers = apiDataIndices
-  .filter(apiKey => columns.some(column => column.dataIndex === apiKey))
-  .map(apiKey => {
-    const matchingColumn = columns.find(column => column.dataIndex === apiKey);
-    return `<th>${matchingColumn?.title || ''}</th>`;
-  })
-  .join('');
-    // const rows = apiData.map(item =>
-    //   columns.map(column => `<td>${item[column.dataIndex]?.toString() || ''}</td>`).join('')
-    // );
-
-    const rows = apiData.map(item => {
-        const rowData = apiDataIndices
-          .filter(apiKey => columns.some(column => column.dataIndex === apiKey))
-          .map(apiKey => {
-            const matchingColumn = columns.find(column => column.dataIndex === apiKey);
-            return `<td>${item[matchingColumn?.dataIndex]?.toString() || ''}</td>`;
-          })
-          .join('');
-        return `<tr>${rowData}</tr>`;
-      });
-
-
-    const htmlContent = `
-      <html>
-        <head>
-          <style>
-            table {
-              border-collapse: collapse;
-              width: 100%;
-            }
-
-            th, td {
-              border: 1px solid black;
-              padding: 5px;
-              text-align: left;
-            }
-
-            h2{
-                text-align:center;
-            }
-            footer {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                text-align: center;
-                padding: 5px;
-              }
-        
-
-              @page {
-                counter-increment: page;
-                @bottom-center {
-                  content: 'Page ' counter(page);
-                }
-              }
-          </style>
-        </head>
-        <body>
-          <table>
-            <h2>${name}</h2>
-            <div>
-              <h4>From Date : ${fromDate}</p>
-              <h4>To Date   : ${toDate}</p>
-            </div>
-            <thead>
-              <tr>${headers}</tr>
-            </thead>
-            <tbody>
-              ${rows.map(row => `<tr>${row}</tr>`).join('')}
-            </tbody>
-          </table>
-          <footer id="pageFooter"></footer>
-
-          <script type="text/javascript">
-            // JavaScript to dynamically update the page number
-            let pageNumber = 1;
-    
-            window.matchMedia('print').addListener(function (mediaQueryListEvent) {
-              if (mediaQueryListEvent.matches) {
-                updatePageNumber();
-              }
-            });
-    
-            function updatePageNumber() {
-              document.getElementById('pageFooter').innerHTML = 'Page ' + pageNumber;
-              pageNumber++;
-            }
-          </script>        
-        </body>
-      </html>
-    `;
-
-    return htmlContent;
-  }
-
-  async generatePdfBuffer(htmlContent: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      executablePath: '/usr/bin/google-chrome',
-      args: ['--disable-dev-shm-usage']
+  async generatePdfBuffer(apiData: any, name: string, fromDate: any, toDate: any): Promise<Buffer> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const pdfDoc = await PDFDocument.create(); // Await here
+  
+        const page = pdfDoc.addPage(PageSizes.A4);
+  
+        const fontSize = 12;
+        const lineHeight = 20;
+        let y = page.getHeight() - 50;
+  
+        // Add content to the PDF
+        page.drawText(name, { x: 50, y, size: fontSize, color: rgb(0, 0, 0) });
+        y -= lineHeight;
+        page.drawText(`From Date: ${fromDate}`, { x: 50, y, size: fontSize, color: rgb(0, 0, 0) });
+        y -= lineHeight;
+        page.drawText(`To Date: ${toDate}`, { x: 50, y, size: fontSize, color: rgb(0, 0, 0) });
+        y -= lineHeight;
+  
+        // Add your API data to the PDF
+        // Example: page.drawText(JSON.stringify(apiData), { x: 50, y, size: fontSize, color: rgb(0, 0, 0) });
+  
+        const pdfBytes = await pdfDoc.save(); // Await here
+        const buffer = Buffer.from(pdfBytes);
+        resolve(buffer);
+      } catch (error) {
+        reject(error);
+      }
     });
-    const page = await browser.newPage();
-
-    await page.setContent(htmlContent);
-    
-    const pdfBuffer = await page.pdf({ format: 'letter' }); // Adjust format as needed
-
-    await browser.close();
-
-    return pdfBuffer;
   }
 }
